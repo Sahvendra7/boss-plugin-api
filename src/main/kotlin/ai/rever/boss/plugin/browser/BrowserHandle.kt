@@ -41,6 +41,11 @@ data class FormFieldInfo(
 }
 
 /**
+ * Opaque token representing the specific frame and document context of a browser context menu.
+ */
+interface BrowserMenuContext
+
+/**
  * Information about the context where a right-click occurred in the browser.
  */
 data class BrowserContextMenuInfo(
@@ -61,7 +66,9 @@ data class BrowserContextMenuInfo(
     /** Current page title */
     val pageTitle: String = "",
     /** Form field info if right-clicked on a form field (for secret auto-fill) */
-    val formFieldInfo: FormFieldInfo? = null
+    val formFieldInfo: FormFieldInfo? = null,
+    /** The frame context this menu belongs to, for precise command routing */
+    val menuContext: BrowserMenuContext? = null
 )
 
 /**
@@ -626,23 +633,34 @@ interface BrowserHandle {
 
     /**
      * Copy the currently selected text to the clipboard.
+     *
+     * @param menuContext When supplied (from [BrowserContextMenuInfo.menuContext]), the command
+     *   targets the exact frame the user right-clicked on. When `null`, the command uses ordinary
+     *   focused-frame / main-frame resolution. A menu context is NOT global state and does not
+     *   affect later ordinary commands.
      */
-    fun copySelection()
+    fun copySelection(menuContext: BrowserMenuContext? = null)
 
     /**
      * Paste text from the clipboard at the current cursor position.
+     *
+     * @param menuContext See [copySelection].
      */
-    fun paste()
+    fun paste(menuContext: BrowserMenuContext? = null)
 
     /**
      * Cut the currently selected text to the clipboard.
+     *
+     * @param menuContext See [copySelection].
      */
-    fun cut()
+    fun cut(menuContext: BrowserMenuContext? = null)
 
     /**
      * Select all text on the page.
+     *
+     * @param menuContext See [copySelection].
      */
-    fun selectAll()
+    fun selectAll(menuContext: BrowserMenuContext? = null)
 
     // ============================================================
     // POPUP AND NEW TAB HANDLING
