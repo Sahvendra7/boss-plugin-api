@@ -659,7 +659,17 @@ interface PluginContext {
     fun unregisterMcpToolProvider(providerId: String) {}
 
     /**
-     * Registers an [McpToolExecutionObserver] to observe tool executions for auditing, tracing, or logging.
+     * Registers an [McpToolExecutionObserver] for best-effort execution display/tracing.
+     * Observation previews are sanitized and may be omitted; this is not a complete audit log.
+     *
+     * Compatibility: [PluginContext] is [HostImplemented]. Consumers must gate these
+     * registration members with the `minBossVersion` of the host release that introduces
+     * them, and the observation types with the `minApiVersion` that publishes them.
+     * Installing a newer API jar does not add members to an older host's pinned context.
+     * The default `false` only detects missing capability when the member itself exists.
+     * To support hosts below that floor in one plugin build, isolate all gated references
+     * outside `ai.rever.boss.plugin.*` and guard entry to that adapter with `LinkageError`
+     * handling; a null check or catch inside the plugin contract package is insufficient.
      *
      * Lifecycle and Identity:
      * - Plugin-facing observer IDs are host-scoped to the specific [PluginContext] instance.
@@ -670,12 +680,15 @@ interface PluginContext {
      *
      * @param observer The observer to register.
      * @return `true` if the host accepted and registered the observer, or `false` if observation
-     *         capability is unavailable (e.g., on an older host). Plugins should use a `false`
-     *         return to present an informative unsupported-host state.
+     *         capability is unavailable on a host exposing this member. Plugins should use
+     *         a `false` return to present an informative unsupported-host state.
      */
     fun registerMcpToolExecutionObserver(observer: McpToolExecutionObserver): Boolean = false
 
-    /** Unregister an MCP tool execution observer by id. */
+    /**
+     * Unregister an MCP tool execution observer by its plugin-facing id. Unknown ids are
+     * harmless. The host-version gate on [registerMcpToolExecutionObserver] also applies here.
+     */
     fun unregisterMcpToolExecutionObserver(observerId: String) {}
 
     /**
